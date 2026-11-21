@@ -1,0 +1,11 @@
+# Security review record (PRD MC-4). Synthetic: a prototype review, not a real sign-off.
+owner: platform-team
+reviewer: security-engineering
+reviewed_on: 2026-11-18
+status: approved
+tools_reviewed: [tickets_search, tickets_get, tickets_create_draft, tickets_update_status]
+findings:
+  - title: Ticket bodies can hold free text from guests
+    severity: low
+    status: accepted
+    note: Output is returned to the model as data; the gateway PII policy applies to what the model then sends on.

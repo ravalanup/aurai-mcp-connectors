@@ -1,0 +1,16 @@
+name: files
+description: File store. List, read and write documents; every file carries a data classification.
+tools:
+  - name: files_list
+    action: read
+    classification: public
+    description: List files in a folder. Files above the caller's data ceiling are left out.
+  - name: files_read
+    action: read
+    classification: dynamic
+    description: Read a file by path. Allowed only when the caller's team may handle the file's classification.
+  - name: files_write
+    action: write
+    classification: dynamic
+    approval: policy
+    description: Write a file with a classification label. Overwriting never lowers an existing label.

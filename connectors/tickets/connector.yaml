@@ -1,0 +1,21 @@
+name: tickets
+description: Work management. Search and read tickets, draft new ones, and move them between statuses.
+tools:
+  - name: tickets_search
+    action: read
+    classification: internal
+    description: Search tickets by words in the title or area, optionally filtered by status. Returns id, title, status and area.
+  - name: tickets_get
+    action: read
+    classification: internal
+    description: Get one ticket by id, including its body.
+  - name: tickets_create_draft
+    action: write
+    classification: internal
+    approval: policy
+    description: Create a ticket in draft status for a person to review. Needs title, body and an area.
+  - name: tickets_update_status
+    action: write
+    classification: internal
+    approval: policy
+    description: Move a ticket to open, in_progress or resolved.

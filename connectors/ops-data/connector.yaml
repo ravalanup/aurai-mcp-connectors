@@ -1,0 +1,15 @@
+name: ops-data
+description: Operations data, read-only. Downtime, staffing and incident detail by park area.
+tools:
+  - name: ops_downtime_summary
+    action: read
+    classification: internal
+    description: Minutes of attraction downtime per day for an area over the last N days.
+  - name: ops_staffing
+    action: read
+    classification: confidential
+    description: Scheduled staff, on-call and open shifts for an area on a given day (YYYY-MM-DD).
+  - name: ops_incidents
+    action: read
+    classification: confidential
+    description: Incident summaries for an area over the last N days.

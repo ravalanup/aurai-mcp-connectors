@@ -1,0 +1,13 @@
+name: messaging
+description: Messaging. Draft messages to company addresses; sending needs human approval every time.
+tools:
+  - name: messages_create_draft
+    action: write
+    classification: internal
+    approval: policy
+    description: Create a draft message to one or more company addresses. Nothing is sent.
+  - name: messages_send
+    action: write
+    classification: internal
+    approval: always
+    description: Send a previously created draft. Always needs a human approval for this exact draft.

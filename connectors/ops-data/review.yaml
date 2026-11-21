@@ -1,0 +1,10 @@
+owner: platform-team
+reviewer: security-engineering
+reviewed_on: 2026-11-18
+status: approved
+tools_reviewed: [ops_downtime_summary, ops_staffing, ops_incidents]
+findings:
+  - title: Staffing and incident detail are confidential
+    severity: medium
+    status: mitigated
+    note: Classified confidential in the manifest, so only teams at tier T2 or above, with that limit, can call them.
