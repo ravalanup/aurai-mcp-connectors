@@ -1,0 +1,44 @@
+# Per-team connector scope (PRD MC-3). Reviewed like code; every change needs the data owner of what it opens up.
+# Team ids and tiers match aurai-gateway/teams/teams.yaml. Teams are fictional.
+#
+#   tier                  risk tier (T0-T3); sets the highest data classification the team may touch and how many
+#                         human approvals a write needs (T2: one, T3: two)
+#   max_classification    ceiling on the data a tool call may involve, whatever the tier allows
+#   connectors.<name>     tools the team may call, split into read and write. "*" means every tool of that action
+#   paused                set true to deny every call from the team (incident response)
+teams:
+  sandbox:
+    tier: T0
+    max_classification: internal
+    connectors:
+      tickets: { read: ["*"], write: [] }
+      files: { read: [files_list, files_read], write: [] }
+
+  internal-help:
+    tier: T1
+    max_classification: internal
+    connectors:
+      tickets: { read: ["*"], write: [tickets_create_draft] }
+      files: { read: ["*"], write: [] }
+
+  ops-insights:
+    tier: T2
+    max_classification: confidential
+    connectors:
+      ops-data: { read: ["*"], write: [] }
+      tickets: { read: ["*"], write: [tickets_create_draft, tickets_update_status] }
+      messaging: { read: ["*"], write: [messages_create_draft, messages_send] }
+      files: { read: ["*"], write: [] }
+
+  finance-reporting:
+    tier: T2
+    max_classification: confidential
+    connectors:
+      files: { read: ["*"], write: [files_write] }
+      messaging: { read: ["*"], write: [messages_create_draft] }
+
+  guest-assistant:
+    tier: T3
+    max_classification: internal
+    connectors:
+      tickets: { read: ["*"], write: [tickets_create_draft] }
