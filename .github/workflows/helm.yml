@@ -1,0 +1,27 @@
+name: helm
+on:
+  push: { branches: [main], paths: ["charts/**", "policy/**"] }
+  pull_request: { paths: ["charts/**", "policy/**"] }
+permissions:
+  contents: read
+jobs:
+  chart:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+      - name: Lint and render (local)
+        run: |
+          helm lint charts/aurai-connectors -f charts/aurai-connectors/values-local.yaml \
+            --set-file policy.rego=policy/aurai/tools.rego --set-file policy.teams=policy/teams.yaml
+          helm template t charts/aurai-connectors -f charts/aurai-connectors/values-local.yaml \
+            --set-file policy.rego=policy/aurai/tools.rego --set-file policy.teams=policy/teams.yaml > /tmp/local.yaml
+      - name: Render (AWS)
+        run: >
+          helm template t charts/aurai-connectors -f charts/aurai-connectors/values-aws.yaml
+          --set image.repository=123456789012.dkr.ecr.us-east-1.amazonaws.com/aurai-connectors
+          --set-file policy.rego=policy/aurai/tools.rego --set-file policy.teams=policy/teams.yaml > /tmp/aws.yaml
+      - name: kubeconform
+        run: |
+          curl -sSL https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz | tar xz
+          ./kubeconform -strict -summary /tmp/local.yaml /tmp/aws.yaml

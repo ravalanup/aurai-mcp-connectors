@@ -1,0 +1,57 @@
+global:
+  environment: local
+
+image:
+  repository: aurai-connectors
+  tag: "0.1.0"
+  pullPolicy: IfNotPresent
+
+# Each enabled connector gets its own Deployment, Service and OPA sidecar, so it scales, rolls and is reviewed on its
+# own. Disabling one removes its tools from the platform.
+connectors:
+  tickets: { enabled: true, replicas: 1 }
+  ops-data: { enabled: true, replicas: 1 }
+  messaging: { enabled: true, replicas: 1 }
+  files: { enabled: true, replicas: 1 }
+
+service:
+  port: 8080
+
+config:
+  oidcIssuer: http://keycloak.aurai-system.svc.cluster.local:8080/realms/aurai
+  oidcJwksUrl: ""                  # blank = derived from the issuer
+  oidcAudience: aurai-connectors   # callers' service accounts request this audience
+  otlpEndpoint: http://otel-collector.aurai-system.svc.cluster.local:4318
+  redisUrl: ""                     # set with more than one replica, so an approval is single-use across all of them
+
+# The policy. Supply both at install time so the files in policy/ stay the single source of truth:
+#   --set-file policy.rego=policy/aurai/tools.rego --set-file policy.teams=policy/teams.yaml
+policy:
+  rego: ""
+  teams: ""
+
+opa:
+  image: openpolicyagent/opa:1.22.4-static
+  resources:
+    requests: { cpu: 25m, memory: 48Mi }
+    limits: { memory: 128Mi }
+
+secrets:
+  # The key shared with the approval service. Created outside the chart.
+  approvalSigningKey: { name: connectors-secrets, key: AURAI_APPROVAL_SIGNING_KEY }
+
+serviceAccount:
+  create: true
+  annotations: {}
+
+resources:
+  requests: { cpu: 50m, memory: 128Mi }
+  limits: { memory: 256Mi }
+
+podDisruptionBudget:
+  enabled: false                   # turn on with replicas > 1
+
+networkPolicy:
+  enabled: true
+  # Namespaces labelled aurai.io/platform-access=true may call the connectors; add others here by name.
+  allowFromNamespaces: []

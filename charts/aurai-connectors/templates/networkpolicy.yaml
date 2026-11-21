@@ -1,0 +1,28 @@
+{{- if .Values.networkPolicy.enabled }}
+# kind's default network plugin does not enforce NetworkPolicy; EKS needs policy support enabled.
+# Ingress only: callers must be in a platform-access namespace. Egress is not restricted in this prototype (the
+# connectors need Keycloak's JWKS, the collector and, in production, their backing systems).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: connectors-ingress
+  labels:
+    {{- include "aurai-connectors.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: aurai-connector
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              aurai.io/platform-access: "true"
+        {{- range .Values.networkPolicy.allowFromNamespaces }}
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ . | quote }}
+        {{- end }}
+      ports:
+        - port: 8080
+{{- end }}

@@ -1,0 +1,6 @@
+apiVersion: v2
+name: aurai-connectors
+description: Aurai MCP connectors - one governed MCP server per connector, each with an OPA sidecar
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

@@ -1,0 +1,22 @@
+global:
+  environment: aws
+
+image:
+  repository: ""                   # set to the ECR repository at install time
+  pullPolicy: Always
+
+connectors:
+  tickets: { enabled: true, replicas: 2 }
+  ops-data: { enabled: true, replicas: 2 }
+  messaging: { enabled: true, replicas: 2 }
+  files: { enabled: true, replicas: 2 }
+
+config:
+  redisUrl: redis://redis.aurai-system.svc.cluster.local:6379/0
+
+podDisruptionBudget:
+  enabled: true
+
+resources:
+  requests: { cpu: 100m, memory: 192Mi }
+  limits: { memory: 384Mi }

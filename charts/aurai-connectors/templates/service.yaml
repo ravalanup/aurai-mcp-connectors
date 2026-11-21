@@ -1,0 +1,19 @@
+{{- range $name, $cfg := .Values.connectors }}
+{{- if $cfg.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: connector-{{ $name }}
+  labels:
+    {{- include "aurai-connectors.labels" $ | nindent 4 }}
+    aurai.io/connector: {{ $name }}
+spec:
+  selector:
+    {{- include "aurai-connectors.selector" (dict "root" $ "name" $name) | nindent 4 }}
+  ports:
+    - name: http
+      port: {{ $.Values.service.port }}
+      targetPort: http
+{{- end }}
+{{- end }}

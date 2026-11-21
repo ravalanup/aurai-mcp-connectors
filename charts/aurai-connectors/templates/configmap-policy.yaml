@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aurai-connectors-policy
+  labels:
+    {{- include "aurai-connectors.labels" . | nindent 4 }}
+data:
+  # The OPA sidecar loads every file in this ConfigMap: the Rego rules and the per-team data (data.teams).
+  tools.rego: |
+    {{- required "supply the rules: --set-file policy.rego=policy/aurai/tools.rego" .Values.policy.rego | nindent 4 }}
+  teams.yaml: |
+    {{- required "supply the team scopes: --set-file policy.teams=policy/teams.yaml" .Values.policy.teams | nindent 4 }}

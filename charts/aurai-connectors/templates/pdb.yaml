@@ -1,0 +1,18 @@
+{{- if .Values.podDisruptionBudget.enabled }}
+{{- range $name, $cfg := .Values.connectors }}
+{{- if $cfg.enabled }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: aurai-connector-{{ $name }}
+  labels:
+    {{- include "aurai-connectors.labels" $ | nindent 4 }}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      {{- include "aurai-connectors.selector" (dict "root" $ "name" $name) | nindent 6 }}
+{{- end }}
+{{- end }}
+{{- end }}

@@ -1,0 +1,87 @@
+{{- range $name, $cfg := .Values.connectors }}
+{{- if $cfg.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aurai-connector-{{ $name }}
+  labels:
+    {{- include "aurai-connectors.labels" $ | nindent 4 }}
+    aurai.io/connector: {{ $name }}
+spec:
+  replicas: {{ $cfg.replicas | default 1 }}
+  selector:
+    matchLabels:
+      {{- include "aurai-connectors.selector" (dict "root" $ "name" $name) | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "aurai-connectors.selector" (dict "root" $ "name" $name) | nindent 8 }}
+      annotations:
+        # Roll the pods when the policy changes.
+        checksum/policy: {{ print $.Values.policy.rego $.Values.policy.teams | sha256sum }}
+    spec:
+      serviceAccountName: aurai-connectors
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: connector
+          image: {{ include "aurai-connectors.image" $ }}
+          imagePullPolicy: {{ $.Values.image.pullPolicy }}
+          args: ["serve", {{ $name | quote }}, "--transport", "http", "--port", "8080"]
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: AURAI_ISSUER
+              value: {{ $.Values.config.oidcIssuer | quote }}
+            - name: AURAI_JWKS_URL
+              value: {{ $.Values.config.oidcJwksUrl | default (printf "%s/protocol/openid-connect/certs" ($.Values.config.oidcIssuer | trimSuffix "/")) | quote }}
+            - name: AURAI_AUDIENCE
+              value: {{ $.Values.config.oidcAudience | quote }}
+            - name: AURAI_OPA_URL
+              value: http://127.0.0.1:8181
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: {{ $.Values.config.otlpEndpoint | quote }}
+            {{- if $.Values.config.redisUrl }}
+            - name: AURAI_REDIS_URL
+              value: {{ $.Values.config.redisUrl | quote }}
+            {{- end }}
+            - name: AURAI_APPROVAL_SIGNING_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $.Values.secrets.approvalSigningKey.name }}
+                  key: {{ $.Values.secrets.approvalSigningKey.key }}
+          readinessProbe:
+            httpGet: { path: /healthz, port: http }
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /healthz, port: http }
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          resources:
+            {{- toYaml $.Values.resources | nindent 12 }}
+          securityContext:
+            runAsUser: 10001
+            {{- include "aurai-connectors.securityContext" $ | nindent 12 }}
+        - name: opa
+          image: {{ $.Values.opa.image }}
+          # Bound to localhost: only the connector in this pod can ask for decisions.
+          args: ["run", "--server", "--addr=127.0.0.1:8181", "--set=decision_logs.console=true", "/policy"]
+          # No probe: OPA listens on the pod's loopback only, which the kubelet cannot reach, and the static image has
+          # no shell for an exec probe. If OPA is down the connector denies every call (fail closed) and says so.
+          resources:
+            {{- toYaml $.Values.opa.resources | nindent 12 }}
+          securityContext:
+            runAsUser: 10002
+            {{- include "aurai-connectors.securityContext" $ | nindent 12 }}
+          volumeMounts:
+            - { name: policy, mountPath: /policy, readOnly: true }
+      volumes:
+        - name: policy
+          configMap:
+            name: aurai-connectors-policy
+{{- end }}
+{{- end }}
